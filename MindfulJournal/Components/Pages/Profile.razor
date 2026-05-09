@@ -1,0 +1,164 @@
+﻿@page "/profile"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@layout MindfulJournal.Components.Layout.MainLayout
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager Navigation
+
+<PageTitle>Profile - Mindful Journal</PageTitle>
+
+<div style="max-width:600px;">
+    <h2 style="font-size:22px; font-weight:700; color:#333; margin-bottom:20px;">
+        👤 My Profile
+    </h2>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert-success">@successMessage</div>
+    }
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="error-message">@errorMessage</div>
+    }
+
+    <!-- Profile Info -->
+    <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Personal Information</div>
+
+        <div class="form-group">
+            <label>Full Name</label>
+            <input @bind="fullName" type="text" placeholder="Your full name" />
+        </div>
+
+        <div class="form-group">
+            <label>Email Address</label>
+            <input @bind="email" type="email" placeholder="Your email" />
+        </div>
+
+        <button class="btn-primary" style="width:auto; padding:10px 24px;"
+                @onclick="UpdateProfile" disabled="@isSaving">
+            @(isSaving ? "Saving..." : "Update Profile")
+        </button>
+    </div>
+
+    <!-- Change Password -->
+    <div class="card">
+        <div class="card-title">Change Password</div>
+
+        <div class="form-group">
+            <label>Current Password</label>
+            <input @bind="currentPassword" type="password"
+                   placeholder="Enter current password" />
+        </div>
+
+        <div class="form-group">
+            <label>New Password</label>
+            <input @bind="newPassword" type="password"
+                   placeholder="Enter new password" />
+        </div>
+
+        <div class="form-group">
+            <label>Confirm New Password</label>
+            <input @bind="confirmPassword" type="password"
+                   placeholder="Confirm new password" />
+        </div>
+
+        <button class="btn-primary" style="width:auto; padding:10px 24px;
+            background:#00897B;"
+                @onclick="ChangePassword" disabled="@isChangingPassword">
+            @(isChangingPassword ? "Changing..." : "Change Password")
+        </button>
+    </div>
+</div>
+
+@code {
+    string fullName = "";
+    string email = "";
+    string currentPassword = "";
+    string newPassword = "";
+    string confirmPassword = "";
+    string successMessage = "";
+    string errorMessage = "";
+    bool isSaving = false;
+    bool isChangingPassword = false;
+    ApplicationUser? currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+
+        currentUser = await UserManager.FindByIdAsync(userId);
+        if (currentUser != null)
+        {
+            fullName = currentUser.FullName;
+            email = currentUser.Email ?? "";
+        }
+    }
+
+    async Task UpdateProfile()
+    {
+        errorMessage = "";
+        successMessage = "";
+
+        if (currentUser == null) return;
+
+        isSaving = true;
+        StateHasChanged();
+
+        currentUser.FullName = fullName;
+        currentUser.Email = email;
+        currentUser.UserName = email;
+
+        var result = await UserManager.UpdateAsync(currentUser);
+
+        if (result.Succeeded)
+            successMessage = "Profile updated successfully! ✅";
+        else
+            errorMessage = string.Join(", ", result.Errors.Select(e => e.Description));
+
+        isSaving = false;
+        StateHasChanged();
+    }
+
+    async Task ChangePassword()
+    {
+        errorMessage = "";
+        successMessage = "";
+
+        if (newPassword != confirmPassword)
+        {
+            errorMessage = "New passwords do not match.";
+            return;
+        }
+
+        if (newPassword.Length < 6)
+        {
+            errorMessage = "Password must be at least 6 characters.";
+            return;
+        }
+
+        if (currentUser == null) return;
+
+        isChangingPassword = true;
+        StateHasChanged();
+
+        var result = await UserManager.ChangePasswordAsync(
+            currentUser, currentPassword, newPassword);
+
+        if (result.Succeeded)
+        {
+            successMessage = "Password changed successfully! ✅";
+            currentPassword = "";
+            newPassword = "";
+            confirmPassword = "";
+        }
+        else
+            errorMessage = string.Join(", ", result.Errors.Select(e => e.Description));
+
+        isChangingPassword = false;
+        StateHasChanged();
+    }
+}

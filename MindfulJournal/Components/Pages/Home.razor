@@ -1,0 +1,11 @@
+﻿dotnet nuget locals all --clear
+@page "/"
+@attribute [AllowAnonymous]
+@inject NavigationManager Navigation
+
+@code {
+    protected override void OnInitialized()
+    {
+        Navigation.NavigateTo("/login", forceLoad: true);
+    }
+}

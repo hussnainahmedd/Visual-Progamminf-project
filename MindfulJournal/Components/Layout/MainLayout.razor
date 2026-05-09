@@ -1,0 +1,73 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Components.Authorization
+
+<div class="page-wrapper">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            🧘 Mindful Journal
+        </div>
+
+        <AuthorizeView>
+            <Authorized>
+                <nav class="sidebar-nav">
+                    <a href="/dashboard" class="nav-item @IsActive("/dashboard")">
+                        <span>⊞</span> Dashboard
+                    </a>
+                    <a href="/add-entry" class="nav-item @IsActive("/add-entry")">
+                        <span>+</span> Add Entry
+                    </a>
+                    <a href="/view-entries" class="nav-item @IsActive("/view-entries")">
+                        <span>☰</span> View Entries
+                    </a>
+                    <a href="/analytics" class="nav-item @IsActive("/analytics")">
+                        <span>📊</span> Analytics
+                    </a>
+                    <a href="/suggestions" class="nav-item @IsActive("/suggestions")">
+                        <span>💡</span> Suggestions
+                    </a>
+                    <a href="/profile" class="nav-item @IsActive("/profile")">
+                        <span>👤</span> Profile
+                    </a>
+                    <a href="/settings" class="nav-item @IsActive("/settings")">
+                        <span>⚙</span> Settings
+                    </a>
+                </nav>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+        <!-- Top Bar -->
+        <div class="topbar">
+            <AuthorizeView>
+                <Authorized>
+                    <div class="topbar-user">
+                        <span class="user-avatar">👤</span>
+                        <span class="user-name">@context.User.Identity?.Name</span>
+                        <form method="post" action="/logout">
+                            <button type="submit" class="btn-logout">Logout</button>
+                        </form>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+        </div>
+
+        <!-- Page Content -->
+        <div class="content-area">
+            @Body
+        </div>
+
+    </div>
+</div>
+
+@code {
+    string IsActive(string path)
+    {
+        return Navigation.Uri.Contains(path) ? "active" : "";
+    }
+}

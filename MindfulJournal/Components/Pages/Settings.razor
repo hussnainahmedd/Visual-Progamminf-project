@@ -1,0 +1,147 @@
+﻿@page "/settings"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@layout MindfulJournal.Components.Layout.MainLayout
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<PageTitle>Settings - Mindful Journal</PageTitle>
+
+<div style="max-width:600px;">
+    <h2 style="font-size:22px; font-weight:700; color:#333; margin-bottom:20px;">
+        ⚙️ Settings
+    </h2>
+
+    <!-- Appearance -->
+    <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Appearance</div>
+
+        <div style="display:flex; justify-content:space-between;
+            align-items:center; padding:12px 0;
+            border-bottom:1px solid #f0f0f0;">
+            <div>
+                <div style="font-weight:600; color:#333; font-size:14px;">
+                    Dark Mode
+                </div>
+                <div style="font-size:12px; color:#888;">
+                    Switch between light and dark theme
+                </div>
+            </div>
+            <div class="toggle-switch @(isDarkMode ? "on" : "")"
+                 @onclick="ToggleDarkMode">
+                <div class="toggle-knob"></div>
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between;
+            align-items:center; padding:12px 0;">
+            <div>
+                <div style="font-weight:600; color:#333; font-size:14px;">
+                    Current Theme
+                </div>
+                <div style="font-size:12px; color:#888;">
+                    @(isDarkMode ? "🌙 Dark Mode Active" : "☀️ Light Mode Active")
+                </div>
+            </div>
+            <span style="padding:4px 12px;
+                background:@(isDarkMode ? "#333" : "#e0f2f1");
+                color:@(isDarkMode ? "white" : "#4DB6AC");
+                border-radius:20px; font-size:12px; font-weight:600;">
+                @(isDarkMode ? "Dark" : "Light")
+            </span>
+        </div>
+    </div>
+
+    <!-- Account -->
+    <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Account</div>
+
+        <div style="display:flex; justify-content:space-between;
+            align-items:center; padding:12px 0;
+            border-bottom:1px solid #f0f0f0;">
+            <div>
+                <div style="font-weight:600; color:#333; font-size:14px;">
+                    Edit Profile
+                </div>
+                <div style="font-size:12px; color:#888;">
+                    Update your name, email and password
+                </div>
+            </div>
+            <button @onclick="GoToProfile"
+                    style="padding:8px 16px; background:#e0f2f1;
+                color:#4DB6AC; border:none; border-radius:8px;
+                cursor:pointer; font-weight:600; font-size:13px;">
+                Edit →
+            </button>
+        </div>
+
+        <div style="display:flex; justify-content:space-between;
+            align-items:center; padding:12px 0;">
+            <div>
+                <div style="font-weight:600; color:#333; font-size:14px;">
+                    Logout
+                </div>
+                <div style="font-size:12px; color:#888;">
+                    Sign out of your account
+                </div>
+            </div>
+            <form method="post" action="/logout">
+                <button type="submit"
+                        style="padding:8px 16px; background:#ffebee;
+                    color:#e53935; border:none; border-radius:8px;
+                    cursor:pointer; font-weight:600; font-size:13px;">
+                    Logout
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- About -->
+    <div class="card">
+        <div class="card-title">About</div>
+        <div style="font-size:13px; color:#666; line-height:1.8;">
+            <div>🧘 <b>Mindful Journal</b> v1.0</div>
+            <div>Built with Blazor Server + ASP.NET Core + SQL Server</div>
+            <div style="margin-top:8px; color:#aaa;">
+                An emotion-based journaling system for daily mood
+                tracking and emotional wellness.
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    bool isDarkMode = false;
+    bool initialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !initialized)
+        {
+            initialized = true;
+            try
+            {
+                var value = await JS.InvokeAsync<string>(
+                    "getLocalStorage", "darkMode");
+                isDarkMode = value == "True";
+                StateHasChanged();
+            }
+            catch { }
+        }
+    }
+
+    async Task ToggleDarkMode()
+    {
+        isDarkMode = !isDarkMode;
+        try
+        {
+            await JS.InvokeVoidAsync(
+                "setLocalStorage", "darkMode", isDarkMode.ToString());
+            await JS.InvokeVoidAsync("applyTheme", isDarkMode);
+        }
+        catch { }
+        StateHasChanged();
+    }
+
+    void GoToProfile() => Navigation.NavigateTo("/profile");
+}
